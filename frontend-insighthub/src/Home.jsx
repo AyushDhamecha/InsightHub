@@ -1,6 +1,5 @@
 // src/Home.jsx
 import { auth } from "./firebase";
-import { Dashboard } from "./dashboard/Dashboard.jsx"
 
 const Home = () => {
   return (
