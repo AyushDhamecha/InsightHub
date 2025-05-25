@@ -4,6 +4,8 @@ import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth, googleProvider } from "../firebase";
+import { updateProfile } from "firebase/auth"; // Import this at the top
+
 import {
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -29,17 +31,24 @@ const Login = () => {
     if (user) navigate("/");
   }, [user, navigate]);
 
+  const [error, setError] = useState("");
+
   const handleEmailAuth = async () => {
     try {
+      setError("");
       if (isSignup) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: username });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (error) {
       console.error("Authentication error:", error);
+      setError(error.message); // Show to user
     }
   };
+
+
 
   const loginWithGoogle = async () => {
     try {
@@ -186,6 +195,9 @@ const Login = () => {
                   Remember me
                 </label>
               </div>
+              {error && (
+                <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
 
               <button
                 onClick={handleEmailAuth}
