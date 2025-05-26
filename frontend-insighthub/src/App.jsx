@@ -5,6 +5,7 @@ import PrivateRoute from "./auth/PrivateRoute";
 import Login from "./auth/Login";
 import './index.css';
 import Home from "./Home"; // Create this component
+import Dashboard from "./dashboard/Dashboard"
 
 function App() {
   return (
@@ -16,7 +17,8 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <Home />
+                {/* <Home /> */}
+                <Dashboard />
               </PrivateRoute>
             }
           />
