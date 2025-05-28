@@ -22,6 +22,23 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <Home/>
+              </PrivateRoute>
+            }
+          />
+          {/* <Route
+            path="/goals"
+            element={
+              <PrivateRoute>
+              <Home/>
+              </PrivateRoute>
+            }
+          /> */}
+          
         </Routes>
       </AuthProvider>
     </Router>
