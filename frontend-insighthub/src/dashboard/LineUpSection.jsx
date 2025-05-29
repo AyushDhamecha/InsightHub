@@ -36,7 +36,7 @@ const LineUpSection = () => {
       progress: 43,
       timeLeft: 23 * 3600 + 57, // in seconds
       avatars: [{ id: 1, name: "John", color: "bg-blue-500" }],
-      bgColor: "bg-white",
+      bgColor: "bg-[#FFC275]",
       textColor: "text-gray-900",
     },
     
@@ -100,7 +100,7 @@ const LineUpSection = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
       >
         {lineupItems.map((item, index) => (
           <motion.div
