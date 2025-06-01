@@ -2,17 +2,32 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from "lucide-react"
+import { getAuth, onAuthStateChanged } from "firebase/auth"
 
 const GreetingSection = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [userName, setUserName] = useState("")
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
-
     return () => clearInterval(timer)
+  }, [])
+
+  // Get user from Firebase Auth
+  useEffect(() => {
+    const auth = getAuth()
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Use displayName if set, else fallback to email or UID
+        setUserName(user.displayName || user.email?.split("@")[0] || "User")
+      } else {
+        setUserName("Guest")
+      }
+    })
+    return () => unsubscribe()
   }, [])
 
   const formatDate = (date) => {
@@ -36,10 +51,7 @@ const GreetingSection = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.2,
-      },
+      transition: { duration: 0.6, staggerChildren: 0.2 },
     },
   }
 
@@ -63,7 +75,7 @@ const GreetingSection = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {getGreeting()}, Rafael!
+            {getGreeting()}, {userName}!
           </motion.h1>
           <motion.p
             className="text-gray-600 text-sm lg:text-base"
