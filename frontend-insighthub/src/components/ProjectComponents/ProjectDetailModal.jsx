@@ -7,7 +7,7 @@ import ProjectStatusBadge from "./ProjectStatusBadge"
 import ProjectProgressBar from "./ProjectProgressBar"
 
 const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
-  const { sampleUsers, updateProject } = useProjects()
+  const { sampleUsers, updateProject, deleteProject } = useProjects()
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -20,6 +20,8 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
   })
   const [newTag, setNewTag] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     if (project) {
@@ -58,6 +60,29 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
       // You might want to show an error message to the user here
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!project) return
+
+    setIsDeleting(true)
+    try {
+      const success = await deleteProject(project.id)
+      if (success) {
+        console.log("Project deleted successfully")
+        onClose()
+        // You might want to show a success message or redirect
+      } else {
+        console.error("Failed to delete project from database, but removed locally")
+        onClose()
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error)
+      // You might want to show an error message to the user here
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -141,18 +166,96 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   </div>
                 )}
               </div>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                disabled={isSubmitting}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </motion.button>
+              <div className="flex items-center space-x-2">
+                {/* Delete Button */}
+                {project && (
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="p-2 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200"
+                    disabled={isSubmitting || isDeleting}
+                    title="Delete Project"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </motion.button>
+                )}
+                {/* Close Button */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                  disabled={isSubmitting || isDeleting}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </motion.button>
+              </div>
             </div>
+
+            {/* Delete Confirmation */}
+            {showDeleteConfirm && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border-l-4 border-red-400 p-4 mx-6 mt-4 rounded-r-lg"
+              >
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm text-red-700">
+                      Are you sure you want to delete "{project?.name}"? This action cannot be undone and will remove
+                      all associated tasks.
+                    </p>
+                  </div>
+                  <div className="ml-4 flex space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleDelete}
+                      className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting && (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                          className="w-3 h-3 border border-white border-t-transparent rounded-full"
+                        />
+                      )}
+                      <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -167,7 +270,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Enter project name"
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDeleting}
                 />
               </div>
 
@@ -181,7 +284,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Enter project description"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDeleting}
                 />
               </div>
 
@@ -201,7 +304,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                   >
                     <option value="created-now">Created Now</option>
                     <option value="in-progress">In Progress</option>
@@ -216,7 +319,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     value={formData.priority}
                     onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -239,7 +342,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     value={formData.completion}
                     onChange={(e) => setFormData((prev) => ({ ...prev, completion: Number.parseInt(e.target.value) }))}
                     className="w-full"
-                    disabled={formData.status === "completed" || isSubmitting}
+                    disabled={formData.status === "completed" || isSubmitting || isDeleting}
                   />
                   <div className="mt-2">
                     <ProjectProgressBar completion={formData.completion} animated={false} />
@@ -255,7 +358,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     required
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                   />
                 </div>
               </div>
@@ -269,12 +372,12 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                       key={user.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => !isSubmitting && handleUserToggle(user)}
+                      onClick={() => !isSubmitting && !isDeleting && handleUserToggle(user)}
                       className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                         formData.assignedUsers.find((u) => u.id === user.id)
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
-                      } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${isSubmitting || isDeleting ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div
                         className={`w-8 h-8 ${user.color} rounded-full flex items-center justify-center text-white text-sm font-semibold`}
@@ -306,9 +409,9 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.8 }}
                         type="button"
-                        onClick={() => !isSubmitting && handleRemoveTag(tag)}
+                        onClick={() => !isSubmitting && !isDeleting && handleRemoveTag(tag)}
                         className="ml-2 text-blue-600 hover:text-blue-800"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isDeleting}
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -326,7 +429,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     placeholder="Add a tag"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                   />
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -334,7 +437,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     type="button"
                     onClick={handleAddTag}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeleting}
                   >
                     Add
                   </motion.button>
@@ -349,7 +452,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   type="button"
                   onClick={onClose}
                   className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDeleting}
                 >
                   Cancel
                 </motion.button>
@@ -358,7 +461,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   whileTap={{ scale: 0.95 }}
                   type="submit"
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isDeleting}
                 >
                   {isSubmitting && (
                     <motion.div

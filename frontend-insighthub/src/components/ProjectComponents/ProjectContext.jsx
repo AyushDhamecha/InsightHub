@@ -255,6 +255,27 @@ export const ProjectProvider = ({ children }) => {
     }
   }
 
+  const deleteProject = async (id) => {
+    try {
+      console.log("Deleting project from MongoDB:", id)
+
+      // Send DELETE request to backend
+      await axios.delete(`${API_URL}/${id}`)
+
+      // Update local state
+      setProjects((prev) => prev.filter((project) => project.id !== id))
+
+      console.log("Project deleted from MongoDB successfully")
+      return true
+    } catch (error) {
+      console.error("Error deleting project from MongoDB:", error)
+
+      // Fallback to local delete only if API fails
+      setProjects((prev) => prev.filter((project) => project.id !== id))
+      return false
+    }
+  }
+
   // New function to update task status in MongoDB
   const updateTaskInProject = async (projectId, taskId, updates) => {
     try {
@@ -408,10 +429,6 @@ export const ProjectProvider = ({ children }) => {
     }
   }
 
-  const deleteProject = (id) => {
-    setProjects((prev) => prev.filter((project) => project.id !== id))
-  }
-
   const getProjectsByStatus = (status) => {
     return projects.filter((project) => project.status === status)
   }
@@ -440,10 +457,10 @@ export const ProjectProvider = ({ children }) => {
     loading,
     addProject,
     updateProject,
+    deleteProject,
     updateTaskInProject,
     createTaskInProject,
     deleteTaskFromProject,
-    deleteProject,
     getProjectsByStatus,
     getRecentProjects,
     getProjectStats,

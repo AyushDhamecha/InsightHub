@@ -110,6 +110,25 @@ router.put("/:id", async (req, res) => {
   }
 })
 
+// DELETE project
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const deletedProject = await Project.findByIdAndDelete(id)
+
+    if (!deletedProject) {
+      return res.status(404).json({ message: "Project not found" })
+    }
+
+    console.log("Deleted project:", deletedProject.title)
+    res.status(200).json({ message: "Project deleted successfully", deletedProject })
+  } catch (error) {
+    console.error("Error deleting project:", error)
+    res.status(500).json({ message: "Error deleting project", error: error.message })
+  }
+})
+
 // PUT update task status in a project
 router.put("/:id/tasks/:taskId", async (req, res) => {
   try {
