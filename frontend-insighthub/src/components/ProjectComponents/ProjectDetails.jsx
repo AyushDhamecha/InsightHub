@@ -27,42 +27,42 @@ const ProjectDetails = ({ projectId }) => {
 
     if (foundProject) {
       // Initialize tasks if they don't exist
-      if (!foundProject.tasks || foundProject.tasks.length === 0) {
-        const initialTasks = [
-          {
-            id: Date.now() + 1,
-            title: "Design wireframes",
-            description: "Create initial wireframes for the project",
-            status: "todo",
-            priority: "high",
-            assignee: foundProject.assignedUsers?.[0] || null,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: Date.now() + 2,
-            title: "Setup development environment",
-            description: "Configure development tools and dependencies",
-            status: "in-progress",
-            priority: "medium",
-            assignee: foundProject.assignedUsers?.[1] || null,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: Date.now() + 3,
-            title: "Research competitors",
-            description: "Analyze competitor solutions and features",
-            status: "done",
-            priority: "low",
-            assignee: foundProject.assignedUsers?.[2] || null,
-            createdAt: new Date().toISOString(),
-          },
-        ]
-        const updatedProject = { ...foundProject, tasks: initialTasks }
-        updateProject(foundProject.id, { tasks: initialTasks })
-        setProject(updatedProject)
-      } else {
-        setProject(foundProject)
-      }
+    //   if (!foundProject.tasks || foundProject.tasks.length === 0) {
+    //     const initialTasks = [
+    //       {
+    //         id: Date.now() + 1,
+    //         title: "Design wireframes",
+    //         description: "Create initial wireframes for the project",
+    //         status: "todo",
+    //         priority: "high",
+    //         assignee: foundProject.assignedUsers?.[0] || null,
+    //         createdAt: new Date().toISOString(),
+    //       },
+    //       {
+    //         id: Date.now() + 2,
+    //         title: "Setup development environment",
+    //         description: "Configure development tools and dependencies",
+    //         status: "in-progress",
+    //         priority: "medium",
+    //         assignee: foundProject.assignedUsers?.[1] || null,
+    //         createdAt: new Date().toISOString(),
+    //       },
+    //       {
+    //         id: Date.now() + 3,
+    //         title: "Research competitors",
+    //         description: "Analyze competitor solutions and features",
+    //         status: "done",
+    //         priority: "low",
+    //         assignee: foundProject.assignedUsers?.[2] || null,
+    //         createdAt: new Date().toISOString(),
+    //       },
+    //     ]
+    //     const updatedProject = { ...foundProject, tasks: initialTasks }
+    //     updateProject(foundProject.id, { tasks: initialTasks })
+    //     setProject(updatedProject)
+    //   } else {
+    //     setProject(foundProject)
+    //   }
     }
     setLoading(false)
   }, [actualProjectId, projects, updateProject])
