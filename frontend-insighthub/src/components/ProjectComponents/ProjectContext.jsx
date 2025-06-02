@@ -17,10 +17,12 @@ export const useProjects = () => {
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+  const API_URL = "http://localhost:5000/projects"
 
+  // Fetch projects from MongoDB
   useEffect(() => {
     axios
-      .get("http://localhost:5000/projects")
+      .get(API_URL)
       .then((response) => {
         const formattedProjects = response.data.map((project) => ({
           id: project._id,
@@ -60,30 +62,7 @@ export const ProjectProvider = ({ children }) => {
             priority: "high",
             tags: ["Design", "Mobile", "Banking"],
           },
-          {
-            id: 2,
-            name: "E-commerce Platform",
-            description: "Development of a new e-commerce platform with modern features",
-            assignedUsers: getRandomUsers(2),
-            status: "created-now",
-            completion: 0,
-            dueDate: "2025-03-01",
-            createdAt: new Date().toISOString(),
-            priority: "medium",
-            tags: ["Development", "E-commerce"],
-          },
-          {
-            id: 3,
-            name: "Marketing Website",
-            description: "New marketing website for product launch",
-            assignedUsers: getRandomUsers(4),
-            status: "completed",
-            completion: 100,
-            dueDate: "2025-01-20",
-            createdAt: new Date().toISOString(),
-            priority: "low",
-            tags: ["Marketing", "Website"],
-          },
+          // Other sample projects...
         ]
         setProjects(sampleProjects)
         setLoading(false)
@@ -95,6 +74,16 @@ export const ProjectProvider = ({ children }) => {
     const statusMap = {
       "in progress": "in-progress",
       created: "created-now",
+      completed: "completed",
+    }
+    return statusMap[status] || status
+  }
+
+  // Helper function to map our app's status format to MongoDB status
+  const mapStatusToMongo = (status) => {
+    const statusMap = {
+      "in-progress": "in progress",
+      "created-now": "created",
       completed: "completed",
     }
     return statusMap[status] || status
@@ -147,15 +136,62 @@ export const ProjectProvider = ({ children }) => {
     }
   }, [projects, loading])
 
-  const addProject = (projectData) => {
-    const newProject = {
-      id: Date.now(),
-      ...projectData,
-      createdAt: new Date().toISOString(),
-      completion: 0,
+  const addProject = async (projectData) => {
+    try {
+      // Prepare data for MongoDB format
+      const mongoProjectData = {
+        name: projectData.name,
+        description: projectData.description,
+        assignedUsers: projectData.assignedUsers || [],
+        status: mapStatusToMongo(projectData.status || "created-now"),
+        completion: projectData.completion || 0,
+        dueDate: projectData.dueDate,
+        priority: projectData.priority || "medium",
+        tags: projectData.tags || [],
+      }
+
+      // Send POST request to backend
+      const response = await axios.post(API_URL, mongoProjectData)
+
+      // Format the response data to match our frontend structure
+      const savedProject = {
+        id: response.data._id,
+        name: response.data.title,
+        description: response.data.description,
+        assignedUsers: response.data.people.map((name, index) => ({
+          id: index + 1,
+          name,
+          avatar: name.charAt(0).toUpperCase(),
+          color: getRandomUserColor(index),
+        })),
+        status: mapStatus(response.data.status),
+        completion: response.data.completedPercentage,
+        dueDate: new Date(response.data.dueDate).toISOString().split("T")[0],
+        createdAt: response.data.createdAt,
+        priority: response.data.priority,
+        tags: response.data.tags,
+        tasks: formatTasks(response.data.taskDetails),
+      }
+
+      // Update local state
+      setProjects((prev) => [savedProject, ...prev])
+
+      console.log("Project saved to MongoDB:", savedProject)
+      return savedProject
+    } catch (error) {
+      console.error("Error saving project to MongoDB:", error)
+
+      // Fallback to local storage only if API fails
+      const newProject = {
+        id: Date.now(),
+        ...projectData,
+        createdAt: new Date().toISOString(),
+        completion: 0,
+      }
+      setProjects((prev) => [newProject, ...prev])
+
+      return newProject
     }
-    setProjects((prev) => [newProject, ...prev])
-    return newProject
   }
 
   const updateProject = (id, updates) => {
