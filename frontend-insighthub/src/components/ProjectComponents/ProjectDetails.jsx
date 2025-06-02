@@ -14,23 +14,23 @@ const ProjectDetails = ({ projectId }) => {
   const { id: paramId } = useParams()
   const actualProjectId = projectId || paramId
 
-  const { projects, updateProject } = useProjects()
+  const { projects, updateProject, updateTaskInProject, createTaskInProject, deleteTaskFromProject } = useProjects()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // console.log("ProjectDetails mounted with ID:", actualProjectId)
-    // console.log("Available projects:", projects)
+    console.log("ProjectDetails mounted with ID:", actualProjectId)
+    console.log("Available projects:", projects)
 
     const foundProject = projects.find((p) => p.id.toString() === actualProjectId?.toString())
-    // console.log("Found project:", foundProject)
+    console.log("Found project:", foundProject)
 
     if (foundProject) {
       // Initialize tasks if they don't exist
-      if (!foundProject.tasks) {
+      if (!foundProject.tasks || foundProject.tasks.length === 0) {
         const initialTasks = [
           {
-            id: 1,
+            id: Date.now() + 1,
             title: "Design wireframes",
             description: "Create initial wireframes for the project",
             status: "todo",
@@ -39,7 +39,7 @@ const ProjectDetails = ({ projectId }) => {
             createdAt: new Date().toISOString(),
           },
           {
-            id: 2,
+            id: Date.now() + 2,
             title: "Setup development environment",
             description: "Configure development tools and dependencies",
             status: "in-progress",
@@ -48,7 +48,7 @@ const ProjectDetails = ({ projectId }) => {
             createdAt: new Date().toISOString(),
           },
           {
-            id: 3,
+            id: Date.now() + 3,
             title: "Research competitors",
             description: "Analyze competitor solutions and features",
             status: "done",
@@ -67,38 +67,56 @@ const ProjectDetails = ({ projectId }) => {
     setLoading(false)
   }, [actualProjectId, projects, updateProject])
 
-  const handleTaskUpdate = (taskId, updates) => {
-    if (!project) return
-
-    const updatedTasks = project.tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
-
-    const updatedProject = { ...project, tasks: updatedTasks }
-    setProject(updatedProject)
-    updateProject(project.id, { tasks: updatedTasks })
-  }
-
-  const handleTaskCreate = (newTask) => {
-    if (!project) return
-
-    const taskWithId = {
-      ...newTask,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
+  // Update project state when projects context changes
+  useEffect(() => {
+    if (actualProjectId && projects.length > 0) {
+      const updatedProject = projects.find((p) => p.id.toString() === actualProjectId?.toString())
+      if (updatedProject) {
+        setProject(updatedProject)
+      }
     }
+  }, [projects, actualProjectId])
 
-    const updatedTasks = [...(project.tasks || []), taskWithId]
-    const updatedProject = { ...project, tasks: updatedTasks }
-    setProject(updatedProject)
-    updateProject(project.id, { tasks: updatedTasks })
-  }
-
-  const handleTaskDelete = (taskId) => {
+  const handleTaskUpdate = async (taskId, updates) => {
     if (!project) return
 
-    const updatedTasks = project.tasks.filter((task) => task.id !== taskId)
-    const updatedProject = { ...project, tasks: updatedTasks }
-    setProject(updatedProject)
-    updateProject(project.id, { tasks: updatedTasks })
+    console.log("Handling task update:", { taskId, updates, projectId: project.id })
+
+    try {
+      // Update task in MongoDB via context
+      await updateTaskInProject(project.id, taskId, updates)
+      console.log("Task updated successfully in MongoDB")
+    } catch (error) {
+      console.error("Error updating task:", error)
+    }
+  }
+
+  const handleTaskCreate = async (newTask) => {
+    if (!project) return
+
+    console.log("Handling task creation:", { newTask, projectId: project.id })
+
+    try {
+      // Create task in MongoDB via context
+      await createTaskInProject(project.id, newTask)
+      console.log("Task created successfully in MongoDB")
+    } catch (error) {
+      console.error("Error creating task:", error)
+    }
+  }
+
+  const handleTaskDelete = async (taskId) => {
+    if (!project) return
+
+    console.log("Handling task deletion:", { taskId, projectId: project.id })
+
+    try {
+      // Delete task from MongoDB via context
+      await deleteTaskFromProject(project.id, taskId)
+      console.log("Task deleted successfully from MongoDB")
+    } catch (error) {
+      console.error("Error deleting task:", error)
+    }
   }
 
   if (loading) {

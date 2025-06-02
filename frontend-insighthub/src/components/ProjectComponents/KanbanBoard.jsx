@@ -46,6 +46,7 @@ const KanbanBoard = ({ project, onTaskUpdate, onTaskCreate, onTaskDelete }) => {
   }
 
   const handleDragStart = (e, taskId) => {
+    console.log("Drag started for task:", taskId)
     e.dataTransfer.setData("taskId", taskId.toString())
   }
 
@@ -53,10 +54,44 @@ const KanbanBoard = ({ project, onTaskUpdate, onTaskCreate, onTaskDelete }) => {
     e.preventDefault()
   }
 
-  const handleDrop = (e, newStatus) => {
+  const handleDrop = async (e, newStatus) => {
     e.preventDefault()
-    const taskId = Number.parseInt(e.dataTransfer.getData("taskId"))
-    onTaskUpdate(taskId, { status: newStatus })
+    const taskId = e.dataTransfer.getData("taskId")
+
+    console.log("Task dropped:", { taskId, newStatus })
+
+    if (!taskId) {
+      console.error("No taskId found in drop event")
+      return
+    }
+
+    // Find the task being moved
+    const task = project.tasks?.find((t) => t.id.toString() === taskId)
+    if (!task) {
+      console.error("Task not found:", taskId)
+      return
+    }
+
+    // Don't update if the status is the same
+    if (task.status === newStatus) {
+      console.log("Task already in this status, no update needed")
+      return
+    }
+
+    console.log("Updating task status:", {
+      taskId,
+      oldStatus: task.status,
+      newStatus,
+      taskTitle: task.title,
+    })
+
+    // Call the update function with the new status
+    try {
+      await onTaskUpdate(taskId, { status: newStatus })
+      console.log("Task status updated successfully")
+    } catch (error) {
+      console.error("Error updating task status:", error)
+    }
   }
 
   const containerVariants = {

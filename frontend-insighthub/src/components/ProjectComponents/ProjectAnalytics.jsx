@@ -112,7 +112,7 @@ const ProjectAnalytics = ({ project }) => {
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
       {/* Project Completion */}
       <motion.div variants={cardVariants} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Progress</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tasks Progress</h3>
         <div className="flex items-center justify-center">
           <CircularProgress progress={animatedValues.completionRate} />
         </div>
