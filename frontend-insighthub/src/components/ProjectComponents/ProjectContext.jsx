@@ -194,8 +194,218 @@ export const ProjectProvider = ({ children }) => {
     }
   }
 
-  const updateProject = (id, updates) => {
-    setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, ...updates } : project)))
+  const updateProject = async (id, updates) => {
+    try {
+      // Find the current project to get its current data
+      const currentProject = projects.find((project) => project.id === id)
+      if (!currentProject) {
+        console.error("Project not found for update:", id)
+        return
+      }
+
+      // Merge current project data with updates
+      const updatedProjectData = { ...currentProject, ...updates }
+
+      // Prepare data for MongoDB format
+      const mongoUpdateData = {
+        name: updatedProjectData.name,
+        description: updatedProjectData.description,
+        assignedUsers: updatedProjectData.assignedUsers || [],
+        status: mapStatusToMongo(updatedProjectData.status),
+        completion: updatedProjectData.completion,
+        dueDate: updatedProjectData.dueDate,
+        priority: updatedProjectData.priority,
+        tags: updatedProjectData.tags || [],
+        tasks: updatedProjectData.tasks || [],
+      }
+
+      // Send PUT request to backend
+      const response = await axios.put(`${API_URL}/${id}`, mongoUpdateData)
+
+      // Format the response data to match our frontend structure
+      const updatedProject = {
+        id: response.data._id,
+        name: response.data.title,
+        description: response.data.description,
+        assignedUsers: response.data.people.map((name, index) => ({
+          id: index + 1,
+          name,
+          avatar: name.charAt(0).toUpperCase(),
+          color: getRandomUserColor(index),
+        })),
+        status: mapStatus(response.data.status),
+        completion: response.data.completedPercentage,
+        dueDate: new Date(response.data.dueDate).toISOString().split("T")[0],
+        createdAt: response.data.createdAt,
+        priority: response.data.priority,
+        tags: response.data.tags,
+        tasks: formatTasks(response.data.taskDetails),
+      }
+
+      // Update local state
+      setProjects((prev) => prev.map((project) => (project.id === id ? updatedProject : project)))
+
+      console.log("Project updated in MongoDB:", updatedProject)
+      return updatedProject
+    } catch (error) {
+      console.error("Error updating project in MongoDB:", error)
+
+      // Fallback to local update only if API fails
+      setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, ...updates } : project)))
+    }
+  }
+
+  // New function to update task status in MongoDB
+  const updateTaskInProject = async (projectId, taskId, updates) => {
+    try {
+      console.log("Updating task in MongoDB:", { projectId, taskId, updates })
+
+      // Send PUT request to backend to update task
+      const response = await axios.put(`${API_URL}/${projectId}/tasks/${taskId}`, updates)
+
+      // Format the response data to match our frontend structure
+      const updatedProject = {
+        id: response.data._id,
+        name: response.data.title,
+        description: response.data.description,
+        assignedUsers: response.data.people.map((name, index) => ({
+          id: index + 1,
+          name,
+          avatar: name.charAt(0).toUpperCase(),
+          color: getRandomUserColor(index),
+        })),
+        status: mapStatus(response.data.status),
+        completion: response.data.completedPercentage,
+        dueDate: new Date(response.data.dueDate).toISOString().split("T")[0],
+        createdAt: response.data.createdAt,
+        priority: response.data.priority,
+        tags: response.data.tags,
+        tasks: formatTasks(response.data.taskDetails),
+      }
+
+      // Update local state
+      setProjects((prev) => prev.map((project) => (project.id === projectId ? updatedProject : project)))
+
+      console.log("Task updated in MongoDB successfully")
+      return updatedProject
+    } catch (error) {
+      console.error("Error updating task in MongoDB:", error)
+
+      // Fallback to local update only if API fails
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id === projectId) {
+            const updatedTasks = project.tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
+            return { ...project, tasks: updatedTasks }
+          }
+          return project
+        }),
+      )
+    }
+  }
+
+  // New function to create task in MongoDB
+  const createTaskInProject = async (projectId, taskData) => {
+    try {
+      console.log("Creating task in MongoDB:", { projectId, taskData })
+
+      // Send POST request to backend to create task
+      const response = await axios.post(`${API_URL}/${projectId}/tasks`, taskData)
+
+      // Format the response data to match our frontend structure
+      const updatedProject = {
+        id: response.data._id,
+        name: response.data.title,
+        description: response.data.description,
+        assignedUsers: response.data.people.map((name, index) => ({
+          id: index + 1,
+          name,
+          avatar: name.charAt(0).toUpperCase(),
+          color: getRandomUserColor(index),
+        })),
+        status: mapStatus(response.data.status),
+        completion: response.data.completedPercentage,
+        dueDate: new Date(response.data.dueDate).toISOString().split("T")[0],
+        createdAt: response.data.createdAt,
+        priority: response.data.priority,
+        tags: response.data.tags,
+        tasks: formatTasks(response.data.taskDetails),
+      }
+
+      // Update local state
+      setProjects((prev) => prev.map((project) => (project.id === projectId ? updatedProject : project)))
+
+      console.log("Task created in MongoDB successfully")
+      return updatedProject
+    } catch (error) {
+      console.error("Error creating task in MongoDB:", error)
+
+      // Fallback to local update only if API fails
+      const taskWithId = {
+        ...taskData,
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+      }
+
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id === projectId) {
+            const updatedTasks = [...(project.tasks || []), taskWithId]
+            return { ...project, tasks: updatedTasks }
+          }
+          return project
+        }),
+      )
+    }
+  }
+
+  // New function to delete task from MongoDB
+  const deleteTaskFromProject = async (projectId, taskId) => {
+    try {
+      console.log("Deleting task from MongoDB:", { projectId, taskId })
+
+      // Send DELETE request to backend to delete task
+      const response = await axios.delete(`${API_URL}/${projectId}/tasks/${taskId}`)
+
+      // Format the response data to match our frontend structure
+      const updatedProject = {
+        id: response.data._id,
+        name: response.data.title,
+        description: response.data.description,
+        assignedUsers: response.data.people.map((name, index) => ({
+          id: index + 1,
+          name,
+          avatar: name.charAt(0).toUpperCase(),
+          color: getRandomUserColor(index),
+        })),
+        status: mapStatus(response.data.status),
+        completion: response.data.completedPercentage,
+        dueDate: new Date(response.data.dueDate).toISOString().split("T")[0],
+        createdAt: response.data.createdAt,
+        priority: response.data.priority,
+        tags: response.data.tags,
+        tasks: formatTasks(response.data.taskDetails),
+      }
+
+      // Update local state
+      setProjects((prev) => prev.map((project) => (project.id === projectId ? updatedProject : project)))
+
+      console.log("Task deleted from MongoDB successfully")
+      return updatedProject
+    } catch (error) {
+      console.error("Error deleting task from MongoDB:", error)
+
+      // Fallback to local update only if API fails
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id === projectId) {
+            const updatedTasks = project.tasks.filter((task) => task.id !== taskId)
+            return { ...project, tasks: updatedTasks }
+          }
+          return project
+        }),
+      )
+    }
   }
 
   const deleteProject = (id) => {
@@ -230,6 +440,9 @@ export const ProjectProvider = ({ children }) => {
     loading,
     addProject,
     updateProject,
+    updateTaskInProject,
+    createTaskInProject,
+    deleteTaskFromProject,
     deleteProject,
     getProjectsByStatus,
     getRecentProjects,

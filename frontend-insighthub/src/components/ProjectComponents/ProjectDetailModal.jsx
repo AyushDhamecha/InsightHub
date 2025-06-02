@@ -19,6 +19,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
     tags: [],
   })
   const [newTag, setNewTag] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (project) {
@@ -35,13 +36,29 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
     }
   }, [project])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (project) {
-      updateProject(project.id, formData)
+    setIsSubmitting(true)
+
+    try {
+      if (project) {
+        // Update existing project
+        await updateProject(project.id, formData)
+        console.log("Project updated successfully")
+      }
+
+      // Call the onSave callback
+      if (onSave) {
+        onSave(formData)
+      }
+
+      onClose()
+    } catch (error) {
+      console.error("Error saving project:", error)
+      // You might want to show an error message to the user here
+    } finally {
+      setIsSubmitting(false)
     }
-    onSave(formData)
-    onClose()
   }
 
   const handleUserToggle = (user) => {
@@ -117,9 +134,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {project ? "Edit Project" : "Project Details"}
-                </h2>
+                <h2 className="text-xl font-semibold text-gray-900">{project ? "Edit Project" : "Project Details"}</h2>
                 {project && (
                   <div className="mt-2">
                     <ProjectStatusBadge status={formData.status} size="lg" />
@@ -131,6 +146,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                disabled={isSubmitting}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -151,6 +167,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Enter project name"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -164,6 +181,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Enter project description"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -178,10 +196,12 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                       setFormData((prev) => ({
                         ...prev,
                         status: e.target.value,
-                        completion: e.target.value === "completed" ? 100 : e.target.value === "created-now" ? 0 : prev.completion,
+                        completion:
+                          e.target.value === "completed" ? 100 : e.target.value === "created-now" ? 0 : prev.completion,
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    disabled={isSubmitting}
                   >
                     <option value="created-now">Created Now</option>
                     <option value="in-progress">In Progress</option>
@@ -196,6 +216,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     value={formData.priority}
                     onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    disabled={isSubmitting}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -216,9 +237,9 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     min="0"
                     max="100"
                     value={formData.completion}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, completion: parseInt(e.target.value) }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, completion: Number.parseInt(e.target.value) }))}
                     className="w-full"
-                    disabled={formData.status === "completed"}
+                    disabled={formData.status === "completed" || isSubmitting}
                   />
                   <div className="mt-2">
                     <ProjectProgressBar completion={formData.completion} animated={false} />
@@ -234,6 +255,7 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -247,14 +269,16 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                       key={user.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleUserToggle(user)}
+                      onClick={() => !isSubmitting && handleUserToggle(user)}
                       className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                         formData.assignedUsers.find((u) => u.id === user.id)
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                      } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className={`w-8 h-8 ${user.color} rounded-full flex items-center justify-center text-white text-sm font-semibold`}>
+                      <div
+                        className={`w-8 h-8 ${user.color} rounded-full flex items-center justify-center text-white text-sm font-semibold`}
+                      >
                         {user.avatar}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -282,8 +306,9 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.8 }}
                         type="button"
-                        onClick={() => handleRemoveTag(tag)}
+                        onClick={() => !isSubmitting && handleRemoveTag(tag)}
                         className="ml-2 text-blue-600 hover:text-blue-800"
+                        disabled={isSubmitting}
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -301,13 +326,15 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                     onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     placeholder="Add a tag"
+                    disabled={isSubmitting}
                   />
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     type="button"
                     onClick={handleAddTag}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting}
                   >
                     Add
                   </motion.button>
@@ -321,7 +348,8 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </motion.button>
@@ -329,9 +357,17 @@ const ProjectDetailModal = ({ project, isOpen, onClose, onSave }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  disabled={isSubmitting}
                 >
-                  {project ? "Update Project" : "Save Project"}
+                  {isSubmitting && (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    />
+                  )}
+                  <span>{isSubmitting ? "Updating..." : project ? "Update Project" : "Save Project"}</span>
                 </motion.button>
               </div>
             </form>
