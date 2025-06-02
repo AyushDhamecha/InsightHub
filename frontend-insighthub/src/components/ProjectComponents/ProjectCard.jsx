@@ -81,6 +81,9 @@ const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
     },
   }
 
+  // Safely get the first tag or provide a default
+  const primaryTag = project.tags && project.tags.length > 0 ? project.tags[0] : "General"
+
   return (
     <motion.div
       variants={cardVariants}
@@ -143,7 +146,7 @@ const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
         transition={{ delay: 0.3 + index * 0.1 }}
       >
         <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">{project.name}</h3>
-        <p className="text-sm text-gray-600 font-medium">{project.tags?.[0] || "General"}</p>
+        <p className="text-sm text-gray-600 font-medium">{primaryTag}</p>
       </motion.div>
 
       {/* Progress Section */}
@@ -190,20 +193,21 @@ const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
       >
         {/* User Avatars */}
         <div className="flex -space-x-2">
-          {project.assignedUsers?.slice(0, 3).map((user, userIndex) => (
-            <motion.div
-              key={user.id}
-              initial={{ scale: 0, x: -20 }}
-              animate={{ scale: 1, x: 0 }}
-              transition={{ delay: 0.7 + index * 0.1 + userIndex * 0.05 }}
-              whileHover={{ scale: 1.2, zIndex: 10 }}
-              className={`w-8 h-8 ${user.color} rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold cursor-pointer shadow-sm`}
-              title={user.name}
-            >
-              {user.avatar}
-            </motion.div>
-          ))}
-          {project.assignedUsers?.length > 3 && (
+          {project.assignedUsers &&
+            project.assignedUsers.slice(0, 3).map((user, userIndex) => (
+              <motion.div
+                key={userIndex}
+                initial={{ scale: 0, x: -20 }}
+                animate={{ scale: 1, x: 0 }}
+                transition={{ delay: 0.7 + index * 0.1 + userIndex * 0.05 }}
+                whileHover={{ scale: 1.2, zIndex: 10 }}
+                className={`w-8 h-8 ${user.color || "bg-gray-400"} rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold cursor-pointer shadow-sm`}
+                title={user.name}
+              >
+                {user.avatar || user.name.charAt(0).toUpperCase()}
+              </motion.div>
+            ))}
+          {project.assignedUsers && project.assignedUsers.length > 3 && (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react"
 import { sampleUsers, getRandomUsers } from "./sampleUsers"
+import axios from "axios"
 
 const ProjectContext = createContext()
 
@@ -17,55 +18,127 @@ export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Load projects from localStorage on mount
   useEffect(() => {
-    const savedProjects = localStorage.getItem("dashboard-projects")
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects))
-    } else {
-      // Initialize with sample projects
-      const sampleProjects = [
-        {
-          id: 1,
-          name: "Banking App Redesign",
-          description: "Complete redesign of the mobile banking application with new UI/UX",
-          assignedUsers: getRandomUsers(3),
-          status: "in-progress",
-          completion: 67,
-          dueDate: "2025-02-15",
-          createdAt: new Date().toISOString(),
-          priority: "high",
-          tags: ["Design", "Mobile", "Banking"],
-        },
-        {
-          id: 2,
-          name: "E-commerce Platform",
-          description: "Development of a new e-commerce platform with modern features",
-          assignedUsers: getRandomUsers(2),
-          status: "created-now",
-          completion: 0,
-          dueDate: "2025-03-01",
-          createdAt: new Date().toISOString(),
-          priority: "medium",
-          tags: ["Development", "E-commerce"],
-        },
-        {
-          id: 3,
-          name: "Marketing Website",
-          description: "New marketing website for product launch",
-          assignedUsers: getRandomUsers(4),
-          status: "completed",
-          completion: 100,
-          dueDate: "2025-01-20",
-          createdAt: new Date().toISOString(),
-          priority: "low",
-          tags: ["Marketing", "Website"],
-        },
-      ]
-      setProjects(sampleProjects)
-    }
-    setLoading(false)
+    axios
+      .get("http://localhost:5000/projects")
+      .then((response) => {
+        const formattedProjects = response.data.map((project) => ({
+          id: project._id,
+          name: project.title,
+          description: project.description,
+          assignedUsers: project.people.map((name, index) => ({
+            id: index + 1,
+            name,
+            avatar: name.charAt(0).toUpperCase(),
+            color: getRandomUserColor(index),
+          })),
+          status: mapStatus(project.status),
+          completion: project.completedPercentage,
+          dueDate: new Date(project.dueDate).toISOString().split("T")[0], // Format to YYYY-MM-DD
+          createdAt: project.createdAt,
+          priority: project.priority,
+          tags: project.tags,
+          tasks: formatTasks(project.taskDetails),
+        }))
+
+        setProjects(formattedProjects)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error)
+        // Fallback to sample data if API fails
+        const sampleProjects = [
+          {
+            id: 1,
+            name: "Banking App Redesign",
+            description: "Complete redesign of the mobile banking application with new UI/UX",
+            assignedUsers: getRandomUsers(3),
+            status: "in-progress",
+            completion: 67,
+            dueDate: "2025-02-15",
+            createdAt: new Date().toISOString(),
+            priority: "high",
+            tags: ["Design", "Mobile", "Banking"],
+          },
+          {
+            id: 2,
+            name: "E-commerce Platform",
+            description: "Development of a new e-commerce platform with modern features",
+            assignedUsers: getRandomUsers(2),
+            status: "created-now",
+            completion: 0,
+            dueDate: "2025-03-01",
+            createdAt: new Date().toISOString(),
+            priority: "medium",
+            tags: ["Development", "E-commerce"],
+          },
+          {
+            id: 3,
+            name: "Marketing Website",
+            description: "New marketing website for product launch",
+            assignedUsers: getRandomUsers(4),
+            status: "completed",
+            completion: 100,
+            dueDate: "2025-01-20",
+            createdAt: new Date().toISOString(),
+            priority: "low",
+            tags: ["Marketing", "Website"],
+          },
+        ]
+        setProjects(sampleProjects)
+        setLoading(false)
+      })
   }, [])
+
+  // Helper function to map MongoDB status to our app's status format
+  const mapStatus = (status) => {
+    const statusMap = {
+      "in progress": "in-progress",
+      created: "created-now",
+      completed: "completed",
+    }
+    return statusMap[status] || status
+  }
+
+  // Helper function to generate consistent colors for users
+  const getRandomUserColor = (index) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-yellow-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500",
+    ]
+    return colors[index % colors.length]
+  }
+
+  // Helper function to format task details
+  const formatTasks = (taskDetails) => {
+    if (!taskDetails) return []
+
+    const allTasks = [
+      ...(taskDetails.todo || []).map((task) => ({
+        ...task,
+        id: task._id,
+        status: "todo",
+      })),
+      ...(taskDetails.inProgress || []).map((task) => ({
+        ...task,
+        id: task._id,
+        status: "in-progress",
+      })),
+      ...(taskDetails.done || []).map((task) => ({
+        ...task,
+        id: task._id,
+        status: "done",
+      })),
+    ]
+
+    return allTasks
+  }
 
   // Save projects to localStorage whenever projects change
   useEffect(() => {
@@ -98,9 +171,7 @@ export const ProjectProvider = ({ children }) => {
   }
 
   const getRecentProjects = (limit = 5) => {
-    return projects
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, limit)
+    return projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, limit)
   }
 
   const getProjectStats = () => {

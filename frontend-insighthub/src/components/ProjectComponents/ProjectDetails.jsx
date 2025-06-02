@@ -19,11 +19,11 @@ const ProjectDetails = ({ projectId }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log("ProjectDetails mounted with ID:", actualProjectId)
-    console.log("Available projects:", projects)
+    // console.log("ProjectDetails mounted with ID:", actualProjectId)
+    // console.log("Available projects:", projects)
 
     const foundProject = projects.find((p) => p.id.toString() === actualProjectId?.toString())
-    console.log("Found project:", foundProject)
+    // console.log("Found project:", foundProject)
 
     if (foundProject) {
       // Initialize tasks if they don't exist

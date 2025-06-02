@@ -65,7 +65,7 @@ const ProjectList = () => {
   }
 
   const handleCardClick = (projectId) => {
-    console.log("Navigating to project:", projectId)
+    // console.log("Navigating to project:", projectId)
     navigate(`/projects/${projectId}`)
   }
 
