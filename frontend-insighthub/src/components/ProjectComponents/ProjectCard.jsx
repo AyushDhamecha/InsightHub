@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import ProjectStatusBadge from "./ProjectStatusBadge"
 import { useProjects } from "./ProjectContext"
 
 const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
+  const navigate = useNavigate()
   const [showActions, setShowActions] = useState(false)
   const { updateProject } = useProjects()
 
@@ -29,6 +31,11 @@ const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
   const handleStatusChange = (newStatus) => {
     const completion = newStatus === "completed" ? 100 : newStatus === "in-progress" ? project.completion : 0
     updateProject(project.id, { status: newStatus, completion })
+  }
+
+  const handleCardClick = () => {
+    console.log("Navigating to project:", project.id)
+    navigate(`/projects/${project.id}`)
   }
 
   // Get card background color based on project index or status
@@ -86,6 +93,7 @@ const ProjectCard = ({ project, onEdit, onDelete, index = 0 }) => {
       }}
       onHoverStart={() => setShowActions(true)}
       onHoverEnd={() => setShowActions(false)}
+      onClick={handleCardClick}
       className={`${getCardBackground()} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer relative overflow-hidden border border-white/20`}
     >
       {/* Header with date and actions */}
