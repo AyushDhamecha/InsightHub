@@ -4,10 +4,14 @@ import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
 import { ArrowUpRight } from "lucide-react"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
+import { useNavigate } from "react-router-dom"
+import { useProjects } from "../components/ProjectComponents/ProjectContext"
 
 const GreetingSection = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [userName, setUserName] = useState("")
+  const navigate = useNavigate()
+  const { projects } = useProjects()
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,6 +50,17 @@ const GreetingSection = () => {
     return "Good Evening"
   }
 
+  const handleNavigation = (path) => {
+    navigate(path)
+  }
+
+  // Calculate total tasks from all projects
+  const getTotalTasks = () => {
+    return projects.reduce((total, project) => {
+      return total + (project.tasks ? project.tasks.length : 0)
+    }, 0)
+  }
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -61,8 +76,20 @@ const GreetingSection = () => {
   }
 
   const statsData = [
-    { label: "Projects", value: 4, change: "+3%", isPositive: true },
-    { label: "Tasks", value: 15, change: "+7%", isPositive: true },
+    {
+      label: "Projects",
+      value: projects.length,
+      change: "+3%",
+      isPositive: true,
+      path: "/projects",
+    },
+    {
+      label: "Tasks",
+      value: getTotalTasks(),
+      change: "+7%",
+      isPositive: true,
+      path: "/goals", // You can change this to a tasks page when you create one
+    },
   ]
 
   return (
@@ -95,15 +122,21 @@ const GreetingSection = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
               whileHover={{ scale: 1.05 }}
-              className="text-center cursor-pointer"
+              whileTap={{ scale: 0.95 }}
+              className="text-center cursor-pointer group"
+              onClick={() => handleNavigation(stat.path)}
             >
               <div className="flex flex-col items-center space-y-2">
-                <div className={`rounded-full p-2 bg-gray-100 ${stat.isPositive ? "text-green-600" : "text-red-600"}`}>
+                <div
+                  className={`rounded-full p-2 bg-gray-100 group-hover:bg-blue-100 transition-colors duration-200 ${stat.isPositive ? "text-green-600 group-hover:text-blue-600" : "text-red-600"}`}
+                >
                   <ArrowUpRight className="w-5 h-5" />
                 </div>
-                <p className="text-sm lg:text-base text-gray-900 font-medium">
+                <p className="text-sm lg:text-base text-gray-900 font-medium group-hover:text-blue-600 transition-colors duration-200">
                   {stat.label}
-                  <sup className="text-xs font-semibold text-gray-700 ml-1">({stat.value})</sup>
+                  <sup className="text-xs font-semibold text-gray-700 group-hover:text-blue-500 ml-1 transition-colors duration-200">
+                    ({stat.value})
+                  </sup>
                 </p>
               </div>
             </motion.div>
