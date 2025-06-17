@@ -1,8 +1,5 @@
-export default function Goals() {
-    return (
-      <div className="p-6">
-        <h1>Goals Page Content</h1>
+import GoalsComponent from "./GoalsComponents/Goals"
 
-      </div>
-    );
-  }
+export default function Goals() {
+  return <GoalsComponent />
+}

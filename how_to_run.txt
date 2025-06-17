@@ -1,0 +1,3 @@
+to run backend go to that backend-insighthub and run nodemon server.js and make sure your mongodb service is running on local
+
+to run frontend go to the frontend-insighthub and run npm run dev
