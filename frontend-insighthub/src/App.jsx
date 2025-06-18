@@ -8,6 +8,7 @@ import HomeContent from "./dashboard/HomeContent";
 import Projects from "./components/Projects";
 import Goals from "./components/Goals";
 import ProjectDetails from "./components/ProjectComponents/ProjectDetails";
+//hello
 
 function App() {
   return (
