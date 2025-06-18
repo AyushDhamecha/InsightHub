@@ -19,9 +19,9 @@ class GeminiService {
               .join("\n")}`
           : ""
 
-      const prompt = `You are a helpful AI assistant for a task management application.\n
+      const prompt = `You are a helpful AI assistant and you will be given the task or the users taks from the users to do list and you have to complete tht if possible by you..\n
       User's message: ${userInput}${taskContext}\n
-      Please provide a helpful, concise response.`
+      Help the user accomplish the task if it you can help with that.Your job is to get the task done immidiately if possible by you.`
 
       console.log("[User Input]:", userInput)
       console.log("[Full Prompt]:", prompt)

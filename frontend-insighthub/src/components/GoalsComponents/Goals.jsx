@@ -1,60 +1,119 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import TaskList from "./TaskList"
 import AddTaskForm from "./AddTaskForm"
 import AIAssistant from "./AIAssistant"
 import { Sparkles, Target } from "lucide-react"
+import { goalsApi } from "./api/goalsApi"
+import { getAuth, onAuthStateChanged } from "firebase/auth"
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught by boundary:", error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <h3 className="text-red-800 font-medium mb-2">Something went wrong</h3>
+          <p className="text-red-600 text-sm mb-3">{this.state.error?.message || "An unexpected error occurred"}</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 const Goals = () => {
   const [tasks, setTasks] = useState([])
   const [showAI, setShowAI] = useState(false)
-  const [userName] = useState("Pristia")
+  const [userName, setUserName] = useState("User")
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Load tasks from localStorage on component mount
+  // Update current time every second
   useEffect(() => {
-    try {
-      const savedTasks = localStorage.getItem("goals-tasks")
-      if (savedTasks && savedTasks !== "undefined") {
-        const parsedTasks = JSON.parse(savedTasks)
-        if (Array.isArray(parsedTasks)) {
-          setTasks(parsedTasks)
-        } else {
-          // If data is corrupted, load default tasks
-          loadDefaultTasks()
-        }
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Get user from Firebase Auth
+  useEffect(() => {
+    const auth = getAuth()
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Use displayName if set, else fallback to email or UID
+        setUserName(user.displayName || user.email?.split("@")[0] || "User")
       } else {
-        // Load default tasks if no saved tasks
-        loadDefaultTasks()
+        setUserName("Guest")
       }
+    })
+    return () => unsubscribe()
+  }, [])
+
+  // Load tasks from MongoDB on component mount
+  useEffect(() => {
+    loadTasks()
+  }, [])
+
+  const loadTasks = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const tasksFromDB = await goalsApi.getAllGoals()
+      setTasks(tasksFromDB)
     } catch (error) {
-      console.error("Error loading tasks from localStorage:", error)
+      console.error("Error loading tasks:", error)
+      setError("Failed to load tasks. Please try again.")
+      // Fallback to default tasks if API fails
       loadDefaultTasks()
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
   const loadDefaultTasks = () => {
     const defaultTasks = [
       {
-        id: 1,
+        _id: "temp-1",
         title: "Create design system",
         priority: "high",
         completed: false,
         createdAt: new Date().toISOString(),
       },
       {
-        id: 2,
+        _id: "temp-2",
         title: "Create 3 alternative hero section",
         priority: "medium",
         completed: false,
         createdAt: new Date().toISOString(),
       },
       {
-        id: 3,
+        _id: "temp-3",
         title: "Upload dribbble shot",
         priority: "low",
         completed: false,
@@ -62,51 +121,62 @@ const Goals = () => {
       },
     ]
     setTasks(defaultTasks)
+  }
+
+  const addTask = async (taskData) => {
     try {
-      localStorage.setItem("goals-tasks", JSON.stringify(defaultTasks))
+      const newTask = await goalsApi.createGoal(taskData)
+      setTasks((prev) => [newTask, ...prev])
     } catch (error) {
-      console.error("Error saving default tasks to localStorage:", error)
+      console.error("Error adding task:", error)
+      setError("Failed to add task. Please try again.")
     }
   }
 
-  // Save tasks to localStorage whenever tasks change
-  useEffect(() => {
-    if (!isLoading && tasks.length >= 0) {
-      try {
-        localStorage.setItem("goals-tasks", JSON.stringify(tasks))
-      } catch (error) {
-        console.error("Error saving tasks to localStorage:", error)
-      }
+  const toggleTask = async (id) => {
+    try {
+      const updatedTask = await goalsApi.toggleGoal(id)
+      setTasks((prev) => prev.map((task) => (task._id === id ? updatedTask : task)))
+    } catch (error) {
+      console.error("Error toggling task:", error)
+      setError("Failed to update task. Please try again.")
     }
-  }, [tasks, isLoading])
+  }
 
-  const addTask = (taskData) => {
-    const newTask = {
-      id: Date.now(),
-      ...taskData,
-      completed: false,
-      createdAt: new Date().toISOString(),
+  const deleteTask = async (id) => {
+    try {
+      await goalsApi.deleteGoal(id)
+      setTasks((prev) => prev.filter((task) => task._id !== id))
+    } catch (error) {
+      console.error("Error deleting task:", error)
+      setError("Failed to delete task. Please try again.")
     }
-    setTasks((prev) => [...prev, newTask])
   }
 
-  const toggleTask = (id) => {
-    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)))
-  }
-
-  const deleteTask = (id) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id))
-  }
-
-  const updateTask = (id, updates) => {
-    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...updates } : task)))
+  const updateTask = async (id, updates) => {
+    try {
+      const updatedTask = await goalsApi.updateGoal(id, updates)
+      setTasks((prev) => prev.map((task) => (task._id === id ? updatedTask : task)))
+    } catch (error) {
+      console.error("Error updating task:", error)
+      setError("Failed to update task. Please try again.")
+    }
   }
 
   const getGreeting = () => {
-    const hour = new Date().getHours()
+    const hour = currentTime.getHours()
     if (hour < 12) return "Good Morning"
     if (hour < 17) return "Good Afternoon"
     return "Good Evening"
+  }
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
   }
 
   if (isLoading) {
@@ -127,18 +197,52 @@ const Goals = () => {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-800 mb-2">
+                <motion.h1
+                  className="text-2xl font-semibold text-slate-800 mb-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
                   {getGreeting()}, {userName}!<span className="ml-2">🌟✨🎯</span>
-                </h1>
-                <p className="text-slate-600">What do you plan to do today?</p>
+                </motion.h1>
+                <motion.p
+                  className="text-slate-600"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  {formatDate(currentTime)}
+                </motion.p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-slate-500">Odama Studio</div>
-                <div className="text-sm font-medium text-slate-700">↗ 1354</div>
+                {/* <div className="text-sm text-slate-500">Odama Studio</div>
+                <div className="text-sm font-medium text-slate-700">↗ 1354</div> */}
               </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-red-600 text-sm">{error}</p>
+              <button
+                onClick={() => {
+                  setError(null)
+                  loadTasks()
+                }}
+                className="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         <div
           className={`grid gap-6 transition-all duration-300 ${showAI ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"}`}
@@ -189,7 +293,9 @@ const Goals = () => {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="lg:col-span-1"
               >
-                <AIAssistant tasks={tasks} onClose={() => setShowAI(false)} />
+                <ErrorBoundary>
+                  <AIAssistant tasks={tasks} onClose={() => setShowAI(false)} />
+                </ErrorBoundary>
               </motion.div>
             )}
           </AnimatePresence>

@@ -3,8 +3,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import TaskItem from "./TaskItem"
 
 const TaskList = ({ tasks, onToggle, onDelete, onUpdate }) => {
-  const activeTasks = tasks.filter((task) => !task.completed)
-  const completedTasks = tasks.filter((task) => task.completed)
+  // Filter and ensure unique tasks with valid IDs
+  const validTasks = tasks.filter((task) => task && (task._id || task.id))
+  const activeTasks = validTasks.filter((task) => !task.completed)
+  const completedTasks = validTasks.filter((task) => task.completed)
+
+  // Helper function to get unique key for each task
+  const getTaskKey = (task, index) => {
+    return task._id || task.id || `task-${index}-${task.title?.substring(0, 10) || "untitled"}`
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -15,7 +22,7 @@ const TaskList = ({ tasks, onToggle, onDelete, onUpdate }) => {
             <AnimatePresence>
               {activeTasks.map((task, index) => (
                 <motion.div
-                  key={task.id}
+                  key={getTaskKey(task, index)}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -51,14 +58,14 @@ const TaskList = ({ tasks, onToggle, onDelete, onUpdate }) => {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-slate-500">Completed ({completedTasks.length})</h3>
             <div className="text-xs text-slate-400">
-              {Math.round((completedTasks.length / tasks.length) * 100)}% Complete
+              {Math.round((completedTasks.length / validTasks.length) * 100)}% Complete
             </div>
           </div>
           <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
             <AnimatePresence>
-              {completedTasks.map((task) => (
+              {completedTasks.map((task, index) => (
                 <motion.div
-                  key={task.id}
+                  key={getTaskKey(task, index)}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}

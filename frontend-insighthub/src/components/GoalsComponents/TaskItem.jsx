@@ -39,10 +39,9 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
 
   const handleSave = () => {
     if (editTitle.trim()) {
-      onUpdate(task.id, {
+      onUpdate(task._id, {
         title: editTitle.trim(),
         priority: editPriority,
-        updatedAt: new Date().toISOString(),
       })
       setIsEditing(false)
       setShowMenu(false)
@@ -57,7 +56,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
   }
 
   const handleDelete = () => {
-    onDelete(task.id)
+    onDelete(task._id)
     setShowDeleteConfirm(false)
     setShowMenu(false)
   }
@@ -86,7 +85,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
       layout
       className={`group relative bg-white border rounded-xl p-4 hover:shadow-md transition-all duration-200 ${
         isCompleted ? "opacity-60" : ""
-      } ${isEditing ? "ring-2 ring-blue-500 ring-opacity-50" : ""}`}
+      } ${isEditing ? "ring-2 ring-blue-500 ring-opacity-50 z-30" : "z-10"} ${showMenu ? "z-40" : ""}`}
       whileHover={{ scale: 1.01 }}
     >
       {isEditing ? (
@@ -96,7 +95,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => onToggle(task.id)}
+              onClick={() => onToggle(task._id)}
               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                 task.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-300 hover:border-green-400"
               }`}
@@ -163,7 +162,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => onToggle(task.id)}
+            onClick={() => onToggle(task._id)}
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
               task.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-300 hover:border-green-400"
             }`}
@@ -184,7 +183,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
 
-          <div className="relative task-menu">
+          <div className="relative task-menu z-40">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -200,7 +199,7 @@ const TaskItem = ({ task, onToggle, onDelete, onUpdate, isCompleted = false }) =
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute right-0 top-8 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-20 min-w-[120px]"
+                  className="absolute right-0 top-8 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 min-w-[120px]"
                 >
                   <button
                     onClick={() => {

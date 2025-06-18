@@ -1,37 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { goalsApi } from "../components/GoalsComponents/api/goalsApi"
 
 const MyWorkSection = () => {
   const [activeTab, setActiveTab] = useState("todo")
+  const [tasks, setTasks] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load tasks from MongoDB
+  useEffect(() => {
+    loadTasks()
+  }, [])
+
+  const loadTasks = async () => {
+    try {
+      setIsLoading(true)
+      const tasksFromDB = await goalsApi.getAllGoals()
+      setTasks(tasksFromDB)
+    } catch (error) {
+      console.error("Error loading tasks:", error)
+      setTasks([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Filter tasks based on completion status
+  const todoTasks = tasks.filter((task) => !task.completed)
+  const doneTasks = tasks.filter((task) => task.completed)
 
   const tabs = [
-    { id: "todo", label: "To do", count: 8 },
-    { id: "comments", label: "Comments", count: 2 },
-    { id: "done", label: "Done", count: 15 },
-    { id: "delegate", label: "Delegate", count: 4 },
+    { id: "todo", label: "To do", count: todoTasks.length },
+    { id: "done", label: "Done", count: doneTasks.length },
   ]
-
-  const sampleTasks = {
-    todo: [
-      { id: 1, title: "Design homepage mockup", priority: "high", assignee: "You" },
-      { id: 2, title: "Review user feedback", priority: "medium", assignee: "You" },
-      { id: 3, title: "Update project documentation", priority: "low", assignee: "You" },
-    ],
-    comments: [
-      { id: 1, title: "Banking app feedback", author: "Sarah Johnson", time: "2h ago" },
-      { id: 2, title: "Logo design review", author: "Mike Chen", time: "4h ago" },
-    ],
-    done: [
-      { id: 1, title: "Mobile app wireframes", completedBy: "You", time: "Yesterday" },
-      { id: 2, title: "Brand guidelines", completedBy: "Team", time: "2 days ago" },
-    ],
-    delegate: [
-      { id: 1, title: "Content writing", assignee: "Emma Wilson", dueDate: "Tomorrow" },
-      { id: 2, title: "Image optimization", assignee: "Alex Brown", dueDate: "Next week" },
-    ],
-  }
 
   const tabVariants = {
     inactive: { scale: 1, backgroundColor: "transparent" },
@@ -69,6 +72,39 @@ const MyWorkSection = () => {
     }
   }
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = Math.abs(now - date)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 1) return "Yesterday"
+    if (diffDays === 2) return "2 days ago"
+    if (diffDays <= 7) return `${diffDays} days ago`
+    return date.toLocaleDateString()
+  }
+
+  const getCurrentTasks = () => {
+    if (activeTab === "todo") return todoTasks
+    if (activeTab === "done") return doneTasks
+    return []
+  }
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6 shadow-lg"
+      >
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -83,34 +119,8 @@ const MyWorkSection = () => {
           transition={{ duration: 0.5 }}
           className="text-lg lg:text-xl font-semibold text-gray-900"
         >
-          My Work <span className="text-gray-500">(3)</span>
+          My Work <span className="text-gray-500">({tasks.length})</span>
         </motion.h2>
-
-        <div className="flex items-center space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-          >
-            <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-          >
-            <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-              />
-            </svg>
-          </motion.button>
-        </div>
       </div>
 
       {/* Tabs */}
@@ -122,7 +132,6 @@ const MyWorkSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             variants={tabVariants}
-            // animate={activeTab === tab.id ? "active" : "inactive"}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setActiveTab(tab.id)}
@@ -155,10 +164,10 @@ const MyWorkSection = () => {
           exit="exit"
           className="space-y-3"
         >
-          {sampleTasks[activeTab]?.length > 0 ? (
-            sampleTasks[activeTab].map((item, index) => (
+          {getCurrentTasks().length > 0 ? (
+            getCurrentTasks().map((task, index) => (
               <motion.div
-                key={item.id}
+                key={task._id}
                 variants={itemVariants}
                 whileHover={{ scale: 1.02, x: 5 }}
                 className="p-3 lg:p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-all duration-200 cursor-pointer"
@@ -166,20 +175,10 @@ const MyWorkSection = () => {
                 {activeTab === "todo" && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${getPriorityColor(item.priority)}`} />
-                      <span className="font-medium text-gray-900 text-sm lg:text-base">{item.title}</span>
+                      <div className={`w-2 h-2 rounded-full ${getPriorityColor(task.priority)}`} />
+                      <span className="font-medium text-gray-900 text-sm lg:text-base">{task.title}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{item.assignee}</span>
-                  </div>
-                )}
-
-                {activeTab === "comments" && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900 text-sm lg:text-base">{item.title}</span>
-                      <span className="text-xs text-gray-500">{item.time}</span>
-                    </div>
-                    <span className="text-xs text-gray-600">by {item.author}</span>
+                    <span className="text-xs text-gray-500">You</span>
                   </div>
                 )}
 
@@ -187,21 +186,11 @@ const MyWorkSection = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span className="font-medium text-gray-900 text-sm lg:text-base">{item.title}</span>
+                      <span className="font-medium text-gray-900 text-sm lg:text-base">{task.title}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-600">{item.completedBy}</div>
-                      <div className="text-xs text-gray-500">{item.time}</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "delegate" && (
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900 text-sm lg:text-base">{item.title}</span>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-600">{item.assignee}</div>
-                      <div className="text-xs text-gray-500">Due: {item.dueDate}</div>
+                      <div className="text-xs text-gray-600">You</div>
+                      <div className="text-xs text-gray-500">{formatDate(task.updatedAt)}</div>
                     </div>
                   </div>
                 )}
@@ -222,7 +211,7 @@ const MyWorkSection = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2"
                 />
               </motion.svg>
               <p className="text-sm lg:text-base">
