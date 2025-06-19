@@ -17,7 +17,8 @@ export const useProjects = () => {
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
-  const API_URL = "http://localhost:5000/projects"
+  const API_URL = `${import.meta.env.VITE_API_BASE}/projects`
+
 
   // Fetch projects from MongoDB
   useEffect(() => {
