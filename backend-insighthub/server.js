@@ -12,7 +12,7 @@ app.use(express.json())
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://insighthub-bmc6.onrender.com"],
+    origin: ["http://localhost:5173", "https://insight-hub-zeta.vercel.app"],
     credentials: true,
   })
 )

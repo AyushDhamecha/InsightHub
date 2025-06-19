@@ -76,20 +76,8 @@ const Login = () => {
     try {
       setError("")
       setIsLoading(true)
+      await signInWithRedirect(auth, googleProvider)
 
-      // Check if we're in production environment
-      const isProduction =
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1" &&
-        !window.location.hostname.includes("localhost")
-
-      if (isProduction) {
-        // Use redirect method for production (more reliable)
-        await signInWithRedirect(auth, googleProvider)
-      } else {
-        // Use popup method for development (better UX)
-        await signInWithPopup(auth, googleProvider)
-      }
     } catch (error) {
       console.error("Google Sign-In error:", error)
       setError("Failed to sign in with Google. Please try again.")
