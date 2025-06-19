@@ -12,10 +12,11 @@ app.use(express.json())
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend
+    origin: ["http://localhost:5173", "https://insighthub.onrender.com"],
     credentials: true,
-  }),
+  })
 )
+
 
 // Use MongoDB Atlas URI from .env
 mongoose
