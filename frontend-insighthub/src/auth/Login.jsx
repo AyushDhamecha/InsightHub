@@ -140,7 +140,7 @@ const Login = () => {
             </div>
 
             {/* Social Login */}
-            <div className="mb-6">
+            {/* <div className="mb-6">
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}
@@ -151,17 +151,17 @@ const Login = () => {
                   {isLoading ? "Signing in..." : "Continue with Google"}
                 </span>
               </button>
-            </div>
+            </div> */}
 
             {/* Divider */}
-            <div className="relative mb-6">
+            {/* <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500 font-semibold">OR</span>
               </div>
-            </div>
+            </div> */}
 
             {/* Form */}
             <div className="space-y-4">
