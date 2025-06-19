@@ -10,7 +10,7 @@ const Header = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const fullName = user.displayName || user.email?.split("@")[0] || "User"
-        const first = fullName.split(" ")[0] // Only first name
+        const first = fullName.split(" ")[0] 
         setFirstName(first)
       } else {
         setFirstName("Guest")
@@ -47,7 +47,7 @@ const Header = () => {
         {/* Right Side */}
         <div className="flex items-center space-x-4">
           {/* Settings Icon */}
-          <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+          {/* <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -57,7 +57,7 @@ const Header = () => {
               />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-          </button>
+          </button> */}
 
           {/* Logout Button */}
           
